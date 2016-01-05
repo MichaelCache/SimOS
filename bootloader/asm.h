@@ -11,7 +11,7 @@
 #define SEG_ASM(type,base,lim)                                  \
     .word (((lim) & 0xffff), ((base) & 0xffff);          \
     .byte (((base) >> 16) & 0xff), (0x90 | (type)),             \
-        ( (((lim) >> 28) & 0xf)), 0xc0,(((base) >> 24) & 0xff)
+        ( (((lim) >> 28) & 0xf)), 0xd,(((base) >> 24) & 0xff)
 
 
 /* Application segment type bits */
