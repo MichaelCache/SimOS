@@ -1,4 +1,6 @@
-#include "asm.h"
+#include <asm.h>
+.set PROT_MODE_CSEG,        0x8 
+
 .code16
 .org 0x7c00
 .section .text
@@ -31,12 +33,13 @@ lgdt gdtdesc   # load gdt address to GDTR
 movl %cr0,%eax   # switch to 32-bit protected mode
 orl $0x1,%eax
 movl %eax,%cr0
-
-ljmp $ox8,$portect   #set the CS register,then the instruction might be CS:IP,which means the net pseudocode.
+.code32
+ljmp $PROT_MODE_CSEG,$protect   #set the CS register,then the instruction might be CS:IP,which means the net pseudocode.
                      #why 0x8,it`s 0000000000001|000 section ,the second section of gdt
                     #jmp set the IP,ljmp set the CS,CS:IP is the instruction,s address
-.code32
-movw $010, %ax        # Our data segment selector,0000000000010|000
+#.code32
+protect:
+movw $0x10, %ax        # Our data segment selector,0000000000010|000
 movw %ax, %ds                                   # -> DS: Data Segment
 movw %ax, %es                                   # -> ES: Extra Segment
 movw %ax, %fs                                   # -> FS
@@ -53,8 +56,10 @@ call bootstep2
 .p2align 2                       # force 4 byte alignment
 gdt:
 SEG_NULLASM                           # null seg
-SEG_ASM(STA_X|STA_R, 0x0, 0xffffffff) #code seg for bootloader and kernel from 0 to 4 GB
-SEG_ASM(STA_W, 0x0, 0xffffffff)       #data seg
+.word 0xffff,0x0;
+.byte 0x0,0x9a,0xdf,0xff        #SEG_ASM(STA_X|STA_R,0x0,0xffffffff)   code seg for bootloader and kernel from 0 to 4 GB
+.word 0xffff,0x0;
+.byte 0x0,0x92,0xdf,0xff#SEG_ASM(STA_W,0x0,0xffffffff)        data seg
 gdtdesc:
 .word 0x17    # 3 index,8 byte each,so linit is 3*8-1=0x17
 .long gdt
