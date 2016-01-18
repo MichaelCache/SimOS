@@ -56,7 +56,7 @@ readseg(uintptr_t va, uint32_t count, uint32_t offset) {
 
 /* bootmain - the entry of bootloader */
 void
-bootmain(void) {
+bootstep2(void) {
     // read the 1st page off disk
     readseg((uintptr_t)ELFHDR, SECTSIZE * 8, 0);
 
