@@ -33,11 +33,10 @@ lgdt gdtdesc   # load gdt address to GDTR
 movl %cr0,%eax   # switch to 32-bit protected mode
 orl $0x1,%eax
 movl %eax,%cr0
-.code32
 ljmp $PROT_MODE_CSEG,$protect   #set the CS register,then the instruction might be CS:IP,which means the net pseudocode.
                      #why 0x8,it`s 0000000000001|000 section ,the second section of gdt
                     #jmp set the IP,ljmp set the CS,CS:IP is the instruction,s address
-#.code32
+.code32
 protect:
 movw $0x10, %ax        # Our data segment selector,0000000000010|000
 movw %ax, %ds                                   # -> DS: Data Segment
@@ -48,8 +47,14 @@ movw %ax, %ss
 
 movl $0x0,%ebp		#set up the stack base at 0x00000000
 movl $_start,%esp	#set up the stack top at 0x00007c00
-call bootstep2
 
+#read the second sector from disk
+wait:
+inb  $0x1f7, %ax
+and  $0xc0, %ax
+testb $0x40, %ax		#check the IDE disk 0 state,0x1f7 data and command buffer
+jnz  $wait
+readdisk:
 
 
 
