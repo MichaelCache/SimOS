@@ -55,8 +55,15 @@ and  $0xc0, %ax
 testb $0x40, %ax		#check the IDE disk 0 state,0x1f7 data and command buffer
 jnz  $wait
 readdisk:
-
-
+outb $0x1,$0x1f2		  # sector count = 1
+outb $0x1,$0x1F3          #set sector number
+outb $0x0,$0x1F4          #low 8 bit of track
+outb $0x0,$0x1F5    	  #high 8 bits of track
+outb $0x0,$0x1F6  	      #head
+outb $0x20,$0x1F7  		  #cmd 0x20 - read sectors
+cld
+movb
+repne insl
 
 .p2align 2                       # force 4 byte alignment
 gdt:
