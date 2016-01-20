@@ -1,5 +1,5 @@
 .set PROT_MODE_CSEG,        0x8
-.set SECTOR_NUMBER,         0x4
+.set SECTOR_NUMBER,         0x3
 .code16
 .org 0x7c00
 .section .text
@@ -53,33 +53,53 @@ sti		#enable interrupts after SS SP is set
 
 
 #read the second sector from disk
+movl    $0x100000,%edi
+movl    $0x02,%ebx
+
 wait:
-inb     $0x1f7,%al
+movb	$0xf7,%dl
+inb     (%dx),%al
 and     $0xffffffc0,%eax
 cmp     $0x40,%al
 jne     wait
 
 setread:
-movl    $0x01,%ebx
 movb    $0x1,%al
-outb    %al,$0x1f2
+movw	$0x1f2,%dx
+outb    %al,(%dx)
 movl    %ebx,%eax
-outb    %al,$0x1f3
-outb    %ah,$0x1f4
-shrl    $0x10,%eax
-outb    %al,$0x1f5
+movb	$0xf3,%dl
+outb    %al,(%dx)
 shrl    $0x08,%eax
-outb    %al,$0x1f6
-call    wait
+movb	$0xf4,%dl
+outb    %al,(%dx)
+shrl    $0x08,%eax
+movb	$0xf5,%dl
+outb    %al,(%dx)
+shrl    $0x08,%eax
+movb	$0xf6,%dl
+outb    %al,(%dx)
+
+wait2:
+movb	$0xf7,%dl
+inb     (%dx),%al
+and     $0xffffffc0,%eax
+cmp     $0x40,%al
+jne     wait2
 
 readdisk:
 movw    $0x80,%cx
 cld
-movl    $0x100000,%edi
-repnz   insl    $0x1f0,(%edi)
+movw	$0x1f0,%dx
+repnz   insl
+cmp		$SECTOR_NUMBER,%ebx
+je		jumptokernel
+addl	$0x1,%ebx
+addl	$0x200,%edi
+jmp		wait
 
 jumptokernel:
-movl    $0x100018,%eax
+movl    $0x100034,%eax
 call    *%eax
 
 .p2align 2                       # force 4 byte alignment
