@@ -35,6 +35,11 @@ static inline void sti(void) __attribute__((always_inline));
 static inline void cli(void) __attribute__((always_inline));
 static inline void ltr(uint16_t sel) __attribute__((always_inline));
 
+static inline void
+org(){
+         asm volatile (".org    0x7c70"::);
+    }
+
 static inline uint8_t
 inb(uint16_t port) {
     uint8_t data;

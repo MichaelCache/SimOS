@@ -1,5 +1,6 @@
-.set PROT_MODE_CSEG,        0x8
-.set SECTOR_NUMBER,         0x4
+#include <asm.h>
+.set PROT_MODE_CSEG,        0x8 
+
 .code16
 .org 0x7c00
 .section .text
@@ -45,51 +46,38 @@ movw %ax, %fs                                   # -> FS
 movw %ax, %gs                                   # -> GS
 movw %ax, %ss
 
-movl $0x0500,%ebp		#set up the stack base at 0x00000500
+movl $0x0500h,%ebp		#set up the stack base at 0x00000500
 movl $_start,%esp	#set up the stack top at 0x00007c00
+
+
 sti		#enable interrupts after SS SP is set
-#call bootstep2
-
-
-
 #read the second sector from disk
 wait:
-inb     $0x1f7,%al
-and     $0xffffffc0,%eax
-cmp     $0x40,%al
-jne     wait
-
-setread:
-movl    $0x01,%ebx
-movb    $0x1,%al
-outb    %al,$0x1f2
-movl    %ebx,%eax
-outb    %al,$0x1f3
-outb    %ah,$0x1f4
-shrl    $0x10,%eax
-outb    %al,$0x1f5
-shrl    $0x08,%eax
-outb    %al,$0x1f6
-call    wait
+inb  $0x1f7, %ax
+and  $0xc0, %ax
+testb $0x40, %ax		#check the IDE disk 0 state,0x1f7 data and command buffer
+jnz  $wait
 
 readdisk:
-movw    $0x80,%cx
+movw $0x0201,%ax
+movw $0x0020,%bx
+outb %al,$0x1f2		  # sector count = 1
+outb %ah,$0x1F3          #set sector number=2
+outb %bh,$0x1F4          #low 8 bit of track 0
+outb %bh,$0x1F5    	  #high 8 bits of track 0
+outb %bh,$0x1F6  	      #head 0
+outb %bl,$0x1F7  		  #cmd 0x20 - read sectors
 cld
-movl    $0x100000,%edi
-repnz   insl    $0x1f0,(%edi)
-
-jumptokernel:
-movl    $0x100018,%eax
-call    *%eax
+movl $0x000100000,%edi
+repne insl
 
 .p2align 2                       # force 4 byte alignment
 gdt:
-.word 0x0,0x0
-.byte 0x0,0x0,0x0,0x0       # null seg
+SEG_NULLASM                           # null seg
 .word 0xffff,0x0;
-.byte 0x0,0x9a,0xdf,0xff        #executabl and readable from 0x0 with limit 0xffffffff code seg for bootloader and kernel from 0 to 4 GB
+.byte 0x0,0x9a,0xdf,0xff        #SEG_ASM(STA_X|STA_R,0x0,0xffffffff)   code seg for bootloader and kernel from 0 to 4 GB
 .word 0xffff,0x0;
-.byte 0x0,0x92,0xdf,0xff    #writeable from 0x0 with limit 0xffffffff)        data seg
+.byte 0x0,0x92,0xdf,0xff#SEG_ASM(STA_W,0x0,0xffffffff)        data seg
 gdtdesc:
 .word 0x17    # 3 index,8 byte each,so linit is 3*8-1=0x17
 .long gdt
