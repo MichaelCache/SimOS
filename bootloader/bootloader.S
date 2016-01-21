@@ -101,8 +101,7 @@ jmp		wait
 
 jmptoker:
 movl    $0x100034,%eax		# the elf kernel program entry is 0x34 offset
-call    *%eax				# * means absolute jump
-
+call    *%eax				# * means force jump to the address
 
 .p2align 2					# force 4 byte alignment
 .org 0x7d00
