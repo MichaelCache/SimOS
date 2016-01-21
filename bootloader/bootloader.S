@@ -114,7 +114,7 @@ gdt:
 .word 0xffff,0x0;			# third seg,for kernel data
 .byte 0x0,0x92,0xcf,0x00    # writeable from 0x0 with limit 0xffffffff data seg
 							# format is :low 16bits of limit,low 16bits of base
-							# middle 8 bits of base,low 8 atrribute ,(high 4 limit,high 4 ar reverse order in littledin),high 8 base.
+							# middle 8 bits of base,low 8 atrribute ,high 4 ar,high 4 limit,high 8 base.
 
 gdtdesc:					# gdt describe table
 .word 0x17					# 3 index,8 byte each,so limit is 3*8-1=0x17
