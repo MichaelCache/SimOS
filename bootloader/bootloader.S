@@ -1,6 +1,6 @@
 .set PROT_MODE_CSEG,        0x8		# protected mode code section
 .set PROT_MODE_DSEG,        0x10	# protected mode data section
-.set SECTOR_NUMBER,         0x3		# read the sector number
+.set SECTOR_NUMBER,         0x2		# read the sector number
 .code16
 
 .section .text
@@ -10,7 +10,7 @@ _start:
 jmp entry
 entry:
 nop
-cli					# Disable interrupts
+cli					# Disable hardware interrupts
 xorw %ax,%ax
 movw %ax,%ss
 movw %ax,%ds
@@ -52,7 +52,7 @@ movl $0x7c00,%esp			# set up the stack top at 0x00007c00
 #sti						# enable interrupts after SS SP is set
 
 #ready to read the second sector from IDE disk 0
-movl    $0x100000,%edi		# the memory address to put kernel
+movl    $0x8200,%edi		# the memory address to put kernel
 movl    $0x02,%ebx		
 
 wait:						# wait to the disk ready
@@ -100,9 +100,9 @@ addl	$0x1,%ebx
 jmp		wait
 
 jmptoker:
-movl    $0x100034,%eax		# the elf kernel program entry is 0x34 offset
+movl    $0x8200,%eax		# the elf kernel program entry is 0x34 offset
 call    *%eax				# * means force jump to the address
-
+#jmp		%eax
 .p2align 2					# force 4 byte alignment
 .org 0x7d00
 gdt:
