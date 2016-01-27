@@ -1,8 +1,9 @@
 .section .text
 .globl _start
 _start:
-.code32
+.code16
 .org 0x8200
+int:
 movl $0,%eax
 movl $msg,%esi
 putloop:
