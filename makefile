@@ -1,6 +1,8 @@
 bootblock:bootloader/bootloader.s
 	gcc -c -ggdb -m32 -o bootloader.o bootloader/bootloader.s
 	objcopy bootloader.o -O binary bootblock
+print:print/print.h print/print.c
+	gcc -c -ggdb -I ./print -o print.o print.c
 bootinfo:test/bootinfo.s
 	gcc -c -ggdb -o bootinfo.o test/bootinfo.s
 	objcopy bootinfo.o -O binary bootinfo.tmp
