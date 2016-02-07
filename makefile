@@ -5,13 +5,7 @@ printsc:print/print.h print/print.c
 	gcc -c -ggdb -I ./print -o print.o print/print.c
 	ld -Ttext=0x8200 print.o
 	objcopy a.out -O binary printsc
-os:bootblock bootinfo	
-	dd if=bootblock of=os.img skip=62
-	dd if=bootinfo of=os.img conv=notrunc seek=1
-printf:~/labos/ucore_os_lab/labcodes_answer/lab1_result/bin/bootblock hello.o
-	dd if=bootblock of=printf.img skip=62
-	dd if=hello.o of=printf.img conv=notrunc seek=1
-print.img:printsc bootblock
+all:printsc bootblock
 	dd if=bootblock of=print.img skip=62
 	dd if=printsc of=print.img conv=notrunc seek=1
 clean:
