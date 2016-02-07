@@ -49,7 +49,7 @@ movw %ax, %ss						# SS: Stack Segment
 
 movl $0x0000,%ebp			# set up the stack base at 0x00000000
 movl $0x7c00,%esp			# set up the stack top at 0x00007c00
-sti							# enable interrupts after SS SP is set
+#sti							# enable interrupts after SS SP is set
 
 #ready to read the second sector from IDE disk 0
 movl    $0x8200,%edi		# the memory address to put kernel
@@ -100,7 +100,7 @@ addl	$0x1,%ebx
 jmp		wait
 
 jmptoker:
-movl    $0x8200,%eax		# the elf kernel program entry is 0x34 offset
+movl    $0x8224,%eax		# the elf kernel program entry is 0x34 offset
 call    *%eax				# * means force jump to the address
 #jmp		%eax
 .p2align 2					# force 4 byte alignment
