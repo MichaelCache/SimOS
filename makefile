@@ -1,8 +1,9 @@
 bootblock:bootloader/bootloader.s
 	gcc -c -ggdb -m32 -o bootloader.o bootloader/bootloader.s
 	objcopy bootloader.o -O binary bootblock
-printsc:print/print.h print/print.c
-	gcc -c -ggdb -I ./print -o print.o print/print.c
+printsc:print/print.c
+	gcc -c -ggdb -o print.o print/print.c
+	#gcc -c -ggdb -I ./print -o print.o print/print.c
 	ld -Ttext=0x8200 print.o
 	objcopy a.out -O binary printsc
 all:printsc bootblock
