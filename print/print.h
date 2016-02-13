@@ -15,23 +15,13 @@ struct IDT_DESC		//IDT index descriptor
 {
 	short limit;
 	int address;
-}idt_dessc;
-static inline void set_gatedec(struct GATE_DESCRIPTOR *gd,int offset,short selector,short atrribute);
+};
+void set_idt(struct IDT_DESC idtable,short limit,int address);
 static inline void ldidt(struct IDT_DESC *idt_desc);
 void enter_int_21();
 void enter_int_2c();
 static inline void sti();
 
-
-
-static inline void set_gatedec(struct GATE_DESCRIPTOR *gd,int offset,short selector,short atrribute)
-{
-	gd->offset_low	= offset & 0xffff;
-	gd->selector	= selector;
-	gd->dw_count	= (atrribute >> 8) & 0xff;
-	gd->access_right= atrribute & 0xff;
-	gd->offset_high	= (offset >> 16) & 0xffff;
-}
 
 static inline void outb(unsigned char color,unsigned short port)
 {
@@ -104,9 +94,15 @@ void int_handler2c()
 	}
 }
 
+void set_idt(struct IDT_DESC idtable,short limit,int address)
+{
+	idtable.limit=limit;
+	idtable.address=address;
+}
+
 static inline void ldidt(struct IDT_DESC *idt_desc)
 {
-	asm volatile("lidt (%0);"::"a"(idt_desc));
+	asm volatile("lidt (%0)"::"r"(idt_desc));
 }
 
 static inline void sti()

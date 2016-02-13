@@ -1,6 +1,6 @@
 .set PROT_MODE_CSEG,        0x8		# protected mode code section
 .set PROT_MODE_DSEG,        0x10	# protected mode data section
-.set SECTOR_NUMBER,         0x2		# read the sector number
+.set SECTOR_NUMBER,         0xb		# read the sector number
 .code16
 
 .section .text
@@ -100,7 +100,7 @@ addl	$0x1,%ebx
 jmp		wait
 
 jmptoker:
-movl    $0x838e,%eax		# the elf kernel program entry is 0x34 offset
+movl    $0x835a,%eax		# the elf kernel program entry is 0x34 offset
 call    *%eax				# * means force jump to the address
 #jmp		%eax
 .p2align 2					# force 4 byte alignment
