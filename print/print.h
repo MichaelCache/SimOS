@@ -16,11 +16,13 @@ struct IDT_DESC		//IDT index descriptor
 	short limit;
 	int address;
 };
-void set_idt(struct IDT_DESC idtable,short limit,int address);
+void set_idt(struct IDT_DESC idtable,unsigned short limit,unsigned int address);
 static inline void ldidt(struct IDT_DESC *idt_desc);
 void enter_int_21();
 void enter_int_2c();
 static inline void sti();
+static void sidt(struct IDT_DESC *idt_desc);
+static void sgdt(struct IDT_DESC *gdt);
 
 
 static inline void outb(unsigned char color,unsigned short port)
@@ -69,32 +71,32 @@ void enter_int_2c()
 void int_handler21()
 {
 	outb(0,0x03c8);
-	int i;
-	for(i=1;i<=10;i++)
-	{
+	//int i;
+	//for(i=1;i<=10;i++)
+	//{
 		/* 0xffff00 is the RGB code for yellow,this function means when mouse clicked the
 		 * screen will turn yellow*/
 		outb(0xff,0x03c9);
 		outb(0xff,0x03c9);
 		outb(0x00,0x03c9);
-	}
+	//}
 }
 
 void int_handler2c()
 {
 	outb(0,0x03c8);
-	int i;
-	for(i=1;i<=10;i++)
-	{
-		/* 0xff0000 is the RGB code for red,this function means when mouse clicked the
+	//int i;
+	//for(i=1;i<=10;i++)
+	//{
+		/* 0xff0000 is the RGB code for red,this function means when keyboard is pressed
 		 * screen will turn red*/
 		outb(0xff,0x03c9);
 		outb(0x00,0x03c9);
 		outb(0x00,0x03c9);
-	}
+	//}
 }
 
-void set_idt(struct IDT_DESC idtable,short limit,int address)
+void set_idt(struct IDT_DESC idtable,unsigned short limit,unsigned int address)
 {
 	idtable.limit=limit;
 	idtable.address=address;
@@ -110,4 +112,13 @@ static inline void sti()
 	asm volatile("sti;");
 }
 
+static void sidt(struct IDT_DESC *idt_desc)
+{
+	asm volatile("sidt (%0)"::"r"(idt_desc));
+}
+
+static void sgdt(struct IDT_DESC *gdt)
+{
+	asm volatile("sgdt (%0)"::"r"(gdt));
+}
 #endif

@@ -100,7 +100,7 @@ addl	$0x1,%ebx
 jmp		wait
 
 jmptoker:
-movl    $0x835a,%eax		# the elf kernel program entry is 0x34 offset
+movl    $0x834a,%eax		# the elf kernel program entry is 0x34 offset
 call    *%eax				# * means force jump to the address
 #jmp		%eax
 .p2align 2					# force 4 byte alignment

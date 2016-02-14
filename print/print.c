@@ -29,8 +29,8 @@ void main()
 	outb(2,0xa1);
 	outb(0x3,0xa1);
 
-	outb(0xf9,0x21);
-	outb(0xef,0xa1);
+	outb(0xfb,0x21);
+	outb(0xff,0xa1);
 	//outb(0x68, 0x20);
 	//outb(0x0a, 0x20);
 	//outb(0x68, 0xa0);
@@ -38,25 +38,32 @@ void main()
 
 	/*initial IDT*/
 
-	struct GATE_DESCRIPTOR *idt= (struct GATE_DESCRIPTOR *)0x26f800;	//IDT address is 0x26f800
+	struct GATE_DESCRIPTOR *idt= (struct GATE_DESCRIPTOR *)0xf800;	//IDT address is 0x26f800
 
 	int j;
-	for(j=0;j<=44;j++)		//create 256 empty IDT index
+	for(j=0;j<=255;j++)		//create 256 empty IDT index
 		{
-			set_gatedec(idt+j,0,0,0);
+			set_gatedec(idt+j,enter_int_2c,2*8,0x8e);
 		}
 
-	set_gatedec(idt+0x21,enter_int_21,2*8,0x8e);	//create the INT 0x21 index
-	set_gatedec(idt+0x2c,enter_int_2c,2*8,0x8e);	//create the INT 0x2c index
+	//set_gatedec(idt+0x21,enter_int_21,2*8,0x8e);	//create the INT 0x21 index
+	//set_gatedec(idt+0x2c,enter_int_2c,2*8,0x8e);	//create the INT 0x2c index
 
 	struct IDT_DESC idt_desc;
+	struct IDT_DESC idt_desc_save;
+	struct IDT_DESC gdt_desc;
 	//set_idt(idt_desc,45,0x0026f800);
-	idt_desc.address=idt;
-	idt_desc.limit=45;
+	idt_desc.address=idt;		//idt;
+	idt_desc.limit=256;
 	ldidt(&idt_desc);	//load IDT limit and address
 
+	outb(0xf9,0x21);
+	outb(0xef,0xa1);
 	sti();
+	sidt(&idt_desc_save);
+	sgdt(&gdt_desc);
 	//while(1);
+	//enter_int_2c();
 	for(;;)
 	{
 		hlt();
