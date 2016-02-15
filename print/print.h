@@ -13,11 +13,11 @@ struct GATE_DESCRIPTOR	//IDT gate descriptor
 };
 struct IDT_DESC		//IDT index descriptor
 {
-	short limit;
-	int address;
+	unsigned short limit;
+	unsigned int address;
 };
 void set_idt(struct IDT_DESC idtable,unsigned short limit,unsigned int address);
-static inline void ldidt(struct IDT_DESC *idt_desc);
+static inline void _ldidt();
 void enter_int_21();
 void enter_int_2c();
 static inline void sti();
@@ -102,10 +102,10 @@ void set_idt(struct IDT_DESC idtable,unsigned short limit,unsigned int address)
 	idtable.address=address;
 }
 
-static inline void ldidt(struct IDT_DESC *idt_desc)
+/*static inline void ldidt(struct IDT_DESC *idt_desc)
 {
 	asm volatile("lidt (%0)"::"r"(idt_desc));
-}
+}*/
 
 static inline void sti()
 {
