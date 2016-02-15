@@ -11,18 +11,12 @@ struct GATE_DESCRIPTOR	//IDT gate descriptor
 	char dw_count, access_right;
 	short offset_high;
 };
-struct IDT_DESC		//IDT index descriptor
-{
-	unsigned short limit;
-	unsigned int address;
-};
-void set_idt(struct IDT_DESC idtable,unsigned short limit,unsigned int address);
+
 static inline void _ldidt();
-void enter_int_21();
+void enter_int_21();	//int 0x21
 void enter_int_2c();
-static inline void sti();
-static void sidt(struct IDT_DESC *idt_desc);
-static void sgdt(struct IDT_DESC *gdt);
+static inline void sti();	//enable interrupt
+
 
 
 static inline void outb(unsigned char color,unsigned short port)
@@ -32,7 +26,8 @@ static inline void outb(unsigned char color,unsigned short port)
 
 static inline void hlt()
 {
-	asm volatile ("hlt"::);
+	asm volatile ("hlt;"
+			"jmp hlt;");
 }
 
 void enter_int_21()
@@ -48,7 +43,7 @@ void enter_int_21()
 			"popl %fs;"
 			"popl %es;"
 			"popl %ds;"
-			"iret;"
+			"iret;"			//iret will cllapse,something wrong here
 			);
 }
 
@@ -65,7 +60,7 @@ void enter_int_2c()
 			"popl %fs;"
 			"popl %es;"
 			"popl %ds;"
-			"iret;"
+    		"iret;"
 			);
 }
 void int_handler21()
@@ -96,29 +91,9 @@ void int_handler2c()
 	//}
 }
 
-void set_idt(struct IDT_DESC idtable,unsigned short limit,unsigned int address)
-{
-	idtable.limit=limit;
-	idtable.address=address;
-}
-
-/*static inline void ldidt(struct IDT_DESC *idt_desc)
-{
-	asm volatile("lidt (%0)"::"r"(idt_desc));
-}*/
-
 static inline void sti()
 {
 	asm volatile("sti;");
 }
 
-static void sidt(struct IDT_DESC *idt_desc)
-{
-	asm volatile("sidt (%0)"::"r"(idt_desc));
-}
-
-static void sgdt(struct IDT_DESC *gdt)
-{
-	asm volatile("sgdt (%0)"::"r"(gdt));
-}
 #endif
