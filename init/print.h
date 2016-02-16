@@ -37,13 +37,15 @@ void enter_int_21()
     		"pushl %fs;"
     		"pushl %gs;"
     		"pushal;"
-    		"call int_handler21;"
+    		"call int_handler21;"	//call the real int 21 handler function
     		"popal;"
 			"popl %gs;"
 			"popl %fs;"
 			"popl %es;"
 			"popl %ds;"
-			"iret;"			//iret will cllapse,something wrong here
+    		"popl %ebp;"
+    		"leave;"		//don't ask why,it's the gcc'c fault.gcc will insert push %ebp when call function
+			"iret;"			//so if I don't pop %ebp,iret will case cllapse.
 			);
 }
 
@@ -60,35 +62,29 @@ void enter_int_2c()
 			"popl %fs;"
 			"popl %es;"
 			"popl %ds;"
+    		"popl %ebp;"
+    		"leave;"
     		"iret;"
 			);
 }
 void int_handler21()
 {
 	outb(0,0x03c8);
-	//int i;
-	//for(i=1;i<=10;i++)
-	//{
-		/* 0xffff00 is the RGB code for yellow,this function means when mouse clicked the
-		 * screen will turn yellow*/
-		outb(0xff,0x03c9);
-		outb(0xff,0x03c9);
-		outb(0x00,0x03c9);
-	//}
+	/* 0xffff00 is the RGB code for yellow,this function means when keyboard is pressed the
+	 * screen will turn yellow*/
+	outb(0xff,0x03c9);
+	outb(0xff,0x03c9);
+	outb(0x00,0x03c9);
 }
 
 void int_handler2c()
 {
 	outb(0,0x03c8);
-	//int i;
-	//for(i=1;i<=10;i++)
-	//{
-		/* 0xff0000 is the RGB code for red,this function means when keyboard is pressed
-		 * screen will turn red*/
-		outb(0xff,0x03c9);
-		outb(0x00,0x03c9);
-		outb(0x00,0x03c9);
-	//}
+	/* 0xff0000 is the RGB code for red,this function means when mouse(PS/2) clicked
+	 * screen will turn red*/
+	outb(0xff,0x03c9);
+	outb(0x00,0x03c9);
+	outb(0x00,0x03c9);
 }
 
 static inline void sti()

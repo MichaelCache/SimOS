@@ -6,14 +6,10 @@ void main()
 {
 	/*set the screen to be light blue form VGA port*/
 	outb(0,0x03c8);
-	int i;
-	//for(i=1;i<=3;i++)
-	//{
-		/* 0x00ffff is the RGB code for light blue*/
-		outb(0x00,0x03c9);
-		outb(0xff,0x03c9);
-		outb(0xff,0x03c9);
-	//}
+	/* 0x00ffff is the RGB code for light blue*/
+	outb(0x00,0x03c9);
+	outb(0xff,0x03c9);
+	outb(0xff,0x03c9);
 
 	/*initial PIC i8059a chip*/
 	outb(0xff,0x21);	//mask all master PIC interrupt
@@ -38,7 +34,7 @@ void main()
 
 	/*initial IDT*/
 
-	struct GATE_DESCRIPTOR *idt= (struct GATE_DESCRIPTOR *)0xf800;	//IDT address is 0x26f800
+	struct GATE_DESCRIPTOR *idt= (struct GATE_DESCRIPTOR *)0xf800;	//IDT address is 0xf800
 
 	int j;
 	for(j=0;j<=255;j++)		//create 256 empty IDT index
@@ -51,11 +47,9 @@ void main()
 
 	_ldidt();	//load IDT limit and address
 
-	outb(0xf9,0x21);
+	outb(0xf9,0x21);	//unmask some PIC interrupt
 	outb(0xef,0xa1);
-	sti();
-	//while(1);
-	//enter_int_2c();
+	sti();		//enable interrupt
 	for(;;)
 	{
 		hlt();
