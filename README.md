@@ -6,7 +6,7 @@ This repository is used to synchronize the code from work place and home.
 There is no license protect,you can take it freely.
 
 How to make it:
-Just download the whole directory and type "make all",you will get the disk image SimOS.img
+Just download the whole directory and type "make all",you will get the disk image SimOS.img.And "make clean" will recover the directory.
 
 How to run it:
 Run "qemu-system-i386 -hda SimOS.img" or brun it on your IDE disk.
