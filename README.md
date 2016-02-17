@@ -10,3 +10,4 @@ Just download the whole directory and type "make all",you will get the disk imag
 
 How to run it:
 Run "qemu-system-i386 -hda SimOS.img" or brun it on your IDE disk.
+The third way is to download SimOS.vdi and load it on your VirtualBox.
