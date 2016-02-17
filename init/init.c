@@ -50,6 +50,9 @@ void main()
 	outb(0xf9,0x21);	//unmask some PIC interrupt
 	outb(0xef,0xa1);
 	sti();		//enable interrupt
+
+	//enable mouse
+	//enable_mouse();
 	for(;;)
 	{
 		hlt();
