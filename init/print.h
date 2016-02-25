@@ -4,21 +4,28 @@
 static inline void outb(unsigned char color,unsigned short port);
 static inline unsigned char inb(unsigned short port);
 static inline void hlt();
-void int_handler21();	//driver for PS/2 keyboard
-void int_handler2c();	//driver for PS/2 mouse
-struct GATE_DESCRIPTOR	//IDT gate descriptor
+void int_handler21();		//driver for PS/2 keyboard
+void int_handler2c();		//driver for PS/2 mouse
+struct GATE_DESCRIPTOR		//IDT gate descriptor
 {
 	short offset_low, selector;
 	char dw_count, access_right;
 	short offset_high;
 };
 
+struct FIFO
+{
+	unsigned char *fifo,*write,*read;
+	int size,flag;
+};
+static void fifo_init(struct FIFO *fifo);
 static inline void _ldidt();
-void enter_int_21();	//int 0x21
+void enter_int_21();		//int 0x21
 void enter_int_2c();
 static inline void sti();	//enable interrupt
 static void enable_mouse();
 
+//PIC port
 #define PIC0_ICW1		0x0020
 #define PIC0_OCW2		0x0020
 #define PIC0_IMR		0x0021
@@ -32,6 +39,10 @@ static void enable_mouse();
 #define PIC1_ICW3		0x00a1
 #define PIC1_ICW4		0x00a1
 
+//keyboard port
+#define KEY_STAT		0x0064
+#define KEY_CMD			0x0064
+#define KEY_DATA		0x0060
 
 static inline void outb(unsigned char color,unsigned short port)
 {
@@ -44,6 +55,12 @@ static inline unsigned char inb(unsigned short port)
 	asm volatile ("inb %1,%0":"=a"(data):"d"(port));
 	return data;
 }
+
+static void fifo_init(struct FIFO *fifo)
+{
+
+}
+
 static inline void hlt()
 {
 	asm volatile ("hlt;"
@@ -64,8 +81,7 @@ void enter_int_21()
 			"popl %es;"
 			"popl %ds;"
     		"popl %ebp;"
-    		//"leave;"		//don't ask why,it's the gcc'c fault.gcc will insert push %ebp when call function
-			"iret;"			//so if I don't pop %ebp,iret will case cllapse.
+ 			"iret;"
 			);
 }
 
@@ -83,15 +99,14 @@ void enter_int_2c()
 			"popl %es;"
 			"popl %ds;"
     		"popl %ebp;"
-    		//"leave;"
     		"iret;"
 			);
 }
 void int_handler21()
 {
 	unsigned char key;
-	key=inb(0x60);
-	if(key==0x1e)
+	key=inb(KEY_DATA);				//get the key code from keyboard port
+	if(key==0x1e)					//that's if A is pressed
 	{
 		outb(0,0x03c8);
 		/* 0xffff00 is the RGB code for yellow,this function means when keyboard is pressed the
@@ -109,15 +124,15 @@ void int_handler21()
 		outb(0x00,0x03c9);
 		outb(0x00,0x03c9);
 	}
-	outb(PIC0_OCW2,0x61);
+	outb(0x61,PIC0_OCW2);		//tell PIC interrupt is handled
 }
 
 void int_handler2c()
 {
 	outb(0,0x03c8);
 	/* 0xff0000 is the RGB code for red,this function means when mouse(PS/2) clicked
-	 * screen will turn red*/
-	outb(0xff,0x03c9);
+	 * screen will turn black*/
+	outb(0x00,0x03c9);
 	outb(0x00,0x03c9);
 	outb(0x00,0x03c9);
 }
@@ -129,9 +144,13 @@ static inline void sti()
 
 static void enable_mouse()
 {
-	while(inb(0x64)&0x2!=0);
-	outb(0xd4,0x64);
-	while(inb(0x64)&0x2!=0);
-	outb(0x47,0x60);
+	while(inb(KEY_STAT)&0x2!=0);	//wait to keyboard ready
+	outb(0x60,KEY_CMD);				//tell i8042,CMD will be wrote to it's command buffer
+	while(inb(KEY_STAT)&0x2!=0);
+	outb(0x47,KEY_DATA);			//enable mouse interrupt
+	while(inb(KEY_STAT)&0x2!=0);	//wait to keyboard ready
+	outb(0xd4,KEY_CMD);				//write cmd to mouse
+	while(inb(KEY_STAT)&0x2!=0);
+	outb(0xf4,KEY_DATA);			//enable keyboard
 }
 #endif

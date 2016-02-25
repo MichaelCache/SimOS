@@ -1,6 +1,6 @@
 .set PROT_MODE_CSEG,        0x8		# protected mode code section
 .set PROT_MODE_DSEG,        0x10	# protected mode data section
-.set SECTOR_NUMBER,         0xff	# read to the sector number from sector 2
+.set SECTOR_NUMBER,         0xff	# read to the sector number from sector 2 to this
 .code16
 
 .section .text
@@ -15,6 +15,14 @@ xorw %ax,%ax
 movw %ax,%ss
 movw %ax,%ds
 movw %ax,%es
+
+#movw $0x4f02,%ax
+#movw $0x103,%bx
+movb $0x00,%ah
+movb $0x13,%al
+int $0x10			#set the display mod 800*600 256 color
+xorw %ax,%ax
+#movw %ax,%bx
 
 open20step1:		# open A20 gate by i8042 chip,step1,test the chip is busy or not,then tell the chip A20 bit will be set
 inb $0x64,%al		# port 0x64,the state and command port
@@ -49,10 +57,9 @@ movw %ax, %ss						# SS: Stack Segment
 
 movl $0x0000,%ebp			# set up the stack base at 0x00000000
 movl $0x7c00,%esp			# set up the stack top at 0x00007c00
-#sti							# enable interrupts after SS SP is set
 
 #ready to read the second sector from IDE disk 0
-movl    $0x8200,%edi		# the memory address to put kernel
+movl    $0x100000,%edi		# the memory address to put kernel,1M upper
 movl    $0x02,%ebx		
 
 wait:						# wait to the disk ready
@@ -100,9 +107,9 @@ addl	$0x1,%ebx
 jmp		wait
 
 jmptoker:
-movl    $0x8406,%eax		# the kernel program entry,should be changed accordinglly
+movl    $0x100328,%eax		# the kernel program entry,should be changed accordinglly
 call    *%eax				# * means force jump to the address
-#jmp		%eax
+
 .p2align 2					# force 4 byte alignment
 .org 0x7d00
 gdt:
