@@ -35,7 +35,7 @@ void main()
 	set_gatedec(idt+0x21,enter_int_21,1<<3,0x8e);	//create the INT 0x21 index
 	set_gatedec(idt+0x2c,enter_int_2c,1<<3,0x8e);	//create the INT 0x2c index
 
-	_ldidt();				//load IDT limit and address
+	ldidt();				//load IDT limit and address
 
 	outb(0xf9,PIC0_IMR);	//unmask some PIC interrupt,enable int 0x21
 	outb(0xef,PIC1_IMR);	//enable PIC int 0x2c

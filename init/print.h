@@ -19,7 +19,7 @@ struct FIFO
 	int size,flag;
 };
 static void fifo_init(struct FIFO *fifo);
-static inline void _ldidt();
+static inline void ldidt();
 void enter_int_21();		//int 0x21
 void enter_int_2c();
 static inline void sti();	//enable interrupt
@@ -67,6 +67,15 @@ static inline void hlt()
 			"jmp hlt;");
 }
 
+static inline void ldidt()
+{
+	unsigned short *idt_limit=(unsigned short *)0x8200;	//make a idt_desc_table data structure
+	unsigned int *idt_base=(unsigned int *)0x8202;
+	*idt_limit=0x7ff;				//IDT limit 2048(wich is 256 index with 8B each)-1=0x7ff
+	*idt_base=0xf800;				//IDT base address
+	asm volatile("lidt 0x8200");
+}
+
 void enter_int_21()
 {
     asm volatile ("pushl %ds;"
@@ -80,9 +89,10 @@ void enter_int_21()
 			"popl %fs;"
 			"popl %es;"
 			"popl %ds;"
-    		"popl %ebp;"
- 			"iret;"
-			);
+    		"movl %ebp,%esp;"
+    		"popl %ebp;"		//for call this function,pushl %ebp and movw %esp,%ebp had be done
+ 			"iret;"				//iret only pop out the %cs,%ip and EFLAG,
+			);					//without instruction upper,the stack will chaos
 }
 
 void enter_int_2c()
@@ -98,6 +108,7 @@ void enter_int_2c()
 			"popl %fs;"
 			"popl %es;"
 			"popl %ds;"
+    		"movl %ebp,%esp;"
     		"popl %ebp;"
     		"iret;"
 			);
@@ -145,12 +156,12 @@ static inline void sti()
 static void enable_mouse()
 {
 	while(inb(KEY_STAT)&0x2!=0);	//wait to keyboard ready
-	outb(0x60,KEY_CMD);				//tell i8042,CMD will be wrote to it's command buffer
+	outb(0xd4,KEY_CMD);				//tell i8042 the next CMD will be wrote to mouse
 	while(inb(KEY_STAT)&0x2!=0);
-	outb(0x47,KEY_DATA);			//enable mouse interrupt
+	outb(0xf4,KEY_DATA);			//enable mouse
 	while(inb(KEY_STAT)&0x2!=0);	//wait to keyboard ready
-	outb(0xd4,KEY_CMD);				//write cmd to mouse
+	outb(0x60,KEY_CMD);				//tell i8042,the next CMD will be wrote to it's command buffer
 	while(inb(KEY_STAT)&0x2!=0);
-	outb(0xf4,KEY_DATA);			//enable keyboard
+	outb(0x47,KEY_DATA);			//enable mouse and keyboard interrupt
 }
 #endif

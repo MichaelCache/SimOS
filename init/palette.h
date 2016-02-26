@@ -9,16 +9,16 @@ void save_palette(unsigned char palette[])	//save the palette to the VGA
 {
 	outb(0,0x3c8);				//VGA video DAC(Digital to analog converter) PEL(picture element) address
 	int i;
-	for(i=0;i<=255*3;i+=3)
+	for(i=0;i<=15*3;i+=3)
 	{
-		outb(palette[i],0x3c9);	//VGA video DAC
-		outb(palette[i+1],0x3c9);
-		outb(palette[i+2],0x3c9);
+		outb(palette[i]/4,0x3c9);	//VGA video DAC
+		outb(palette[i+1]/4,0x3c9);
+		outb(palette[i+2]/4,0x3c9);
 	}
 }
 void init_palette()				//generate a color palette table
 {
-	static unsigned char palette[256*3]={
+	static unsigned char palette[16*3]={
 			 0xFF, 0xFF, 0xFF,	//0 black
 			 0xFF, 0xFF, 0xCC,
 			 0xFF, 0xFF, 0x99,
@@ -34,8 +34,8 @@ void init_palette()				//generate a color palette table
 			 0xFF, 0x99, 0xFF,
 			 0xFF, 0x99, 0xCC,
 			 0xFF, 0x99, 0x99,
-			 0xFF, 0x99, 0x66,
-			 0xFF, 0x99, 0x33,
+			 0xFF, 0x99, 0x66
+			 /*0xFF, 0x99, 0x33,
 			 0xFF, 0x99, 0x00,
 			 0xFF, 0x66, 0xFF,
 			 0xFF, 0x66, 0xCC,
@@ -234,7 +234,7 @@ void init_palette()				//generate a color palette table
 			 0x00, 0x00, 0x99,
 			 0x00, 0x00, 0x66,
 			 0x00, 0x00, 0x33,
-			 0x00, 0x00, 0x00	//255 white
+			 0x00, 0x00, 0x00*/	//255 white
 	};
 	void save_palette(palette);
 }
@@ -243,8 +243,8 @@ void init_screen()
 {
 	unsigned char *vram=(unsigned char *)VRAM;
 	int i;
-	for (i=0;i<=0x95ff;i++)
+	for (i=0x500;i<=0xed7f;i+=0x140)
 	{
-		*(vram+i)=15;
+		*(vram+i+100)=15;
 	}
 }
