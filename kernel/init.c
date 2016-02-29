@@ -1,4 +1,4 @@
-#include "print.h"
+#include "basicfunc.h"
 #include "palette.h"
 
 void set_gatedec(struct GATE_DESCRIPTOR *gd,int offset,short selector,short atrribute);
