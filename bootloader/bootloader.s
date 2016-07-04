@@ -107,7 +107,7 @@ addl	$0x1,%ebx
 jmp		wait
 
 jmptoker:
-movl    $0x100425,%eax		# the kernel program entry address,should be changed accordinglly
+movl    $0x1003c1,%eax		# the kernel program entry address,should be changed accordinglly
 call    *%eax				# * means force jump to the address
 
 .p2align 2					# force 4 byte alignment
