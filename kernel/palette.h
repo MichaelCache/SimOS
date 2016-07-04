@@ -2,6 +2,7 @@
 void init_palette();
 void save_palette(unsigned char palette[]);
 void init_screen();
+void draw_windows(int x,int y,int with,int height);
 
 #define	VRAM	0x000a0000		//VGA RAM address
 
@@ -9,7 +10,7 @@ void save_palette(unsigned char palette[])	//save the palette to the VGA
 {
 	outb(0,0x3c8);				//VGA video DAC(Digital to analog converter) PEL(picture element) address
 	int i;
-	for(i=0;i<=255*3;i+=3)
+	for(i=0;i<=767;i+=3)
 	{
 		outb(palette[i]/4,0x3c9);	//VGA video DAC
 		outb(palette[i+1]/4,0x3c9);
@@ -243,8 +244,25 @@ void init_screen()
 {
 	unsigned char *vram=(unsigned char *)VRAM;
 	int i;
-	for (i=0;i<=0xffff;i++)
+	for (i=0;i<=0xf9ff;i++)		//320*200 pixels,0xfa00 pixels in total
 	{
 		*(vram+i)=37;			//set the pixel color to the index of palette
+	}
+}
+
+void draw_windows(int x,int y,int with,int height)				//draw basic windows
+{
+	unsigned char *vram=(unsigned char *)VRAM;
+	int i,j,start,end;
+	start=y*320+x;
+	end=y*320+x+with;
+	for (j=1;j<=height;j++)
+	{
+		for (i=start;i<=end;i++)
+			{
+				*(vram+i)=214;	//palette upper than 214 seems doesn't work
+			}
+		start=(y+j)*320+x;
+		end=(y+j)*320+x+with;
 	}
 }

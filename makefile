@@ -8,6 +8,7 @@ system:kernel/init.c kernel/palette.h kernel/basicfunc.h
 all:system bootblock
 	dd if=bootblock of=SimOS.img skip=62
 	dd if=system of=SimOS.img conv=notrunc seek=1
+convert_vdi:SimOS.img
 	qemu-img convert SimOS.img -O vdi DSB.vdi
 qemu_debug:
 	qemu-system-i386 -hda SimOS.img -d in_asm

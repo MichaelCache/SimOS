@@ -20,7 +20,7 @@ movw %ax,%es
 #movw $0x103,%bx
 movb $0x00,%ah
 movb $0x13,%al
-int $0x10			#set the display mod 800*600 256 color
+int $0x10			#set the display mod 320*200 256 color/8 bit palette index
 xorw %ax,%ax
 #movw %ax,%bx
 
@@ -107,7 +107,7 @@ addl	$0x1,%ebx
 jmp		wait
 
 jmptoker:
-movl    $0x100372,%eax		# the kernel program entry address,should be changed accordinglly
+movl    $0x100425,%eax		# the kernel program entry address,should be changed accordinglly
 call    *%eax				# * means force jump to the address
 
 .p2align 2					# force 4 byte alignment

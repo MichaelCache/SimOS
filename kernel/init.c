@@ -7,6 +7,7 @@ void main()
 {
 	init_palette();
 	init_screen();
+	draw_windows(40,30,200,160);
 
 	/*initial PIC i8059a chip*/
 	outb(0xff,PIC0_IMR);	//mask all master PIC interrupt
