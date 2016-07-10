@@ -10,6 +10,9 @@ void main()
 	init_screen();
 	draw_windows(40,30,200,160,214);
 
+	print_font(50,50,font_E);
+	print_font(58,50,font_F);
+	print_mouse(0,0);
 	/*initial PIC i8059a chip*/
 	outb(0xff,PIC0_IMR);	//mask all master PIC interrupt
 	outb(0xff,PIC1_IMR);	//mask all slave PIC interrupt
@@ -43,7 +46,6 @@ void main()
 	outb(0xef,PIC1_IMR);	//enable PIC int 0x2c
 	sti();					//enable CPU accept interrupt
 
-	print_font(50,50,font_A);
 	//enable mouse
 	enable_mouse();
 	for(;;)
