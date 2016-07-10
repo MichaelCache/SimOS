@@ -2,7 +2,7 @@ bootblock:bootloader/bootloader.s
 	#compile bootloader on 32bit mode with GDB information
 	gcc -c -ggdb -m32 -o bootloader.o bootloader/bootloader.s
 	objcopy bootloader.o -O binary bootblock
-system:kernel/init.c kernel/palette.h kernel/basicfunc.h
+system:kernel/init.c kernel/palette.h kernel/basicfunc.h kernel/font.h 
 	gcc -c -ggdb -m32 -o system.o kernel/init.c
 	#set the system start address at 0x100000
 	ld -m elf_i386 -Ttext=0x100000 system.o

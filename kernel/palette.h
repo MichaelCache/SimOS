@@ -2,7 +2,7 @@
 void init_palette();
 void save_palette(unsigned char palette[]);
 void init_screen();
-void draw_windows(int x,int y,int with,int height);
+void draw_windows(int x,int y,int with,int height,int color);
 
 #define	VRAM	0x000a0000		//VGA RAM address
 
@@ -250,7 +250,7 @@ void init_screen()
 	}
 }
 
-void draw_windows(int x,int y,int with,int height)				//draw basic windows
+void draw_windows(int x,int y,int with,int height, int color)				//draw basic windows
 {
 	unsigned char *vram=(unsigned char *)VRAM;
 	int i,j,start,end;
@@ -260,7 +260,7 @@ void draw_windows(int x,int y,int with,int height)				//draw basic windows
 	{
 		for (i=start;i<=end;i++)
 			{
-				*(vram+i)=214;	//palette upper than 214 seems doesn't work
+				*(vram+i)=color;	//palette upper than 214 seems doesn't work
 			}
 		start=(y+j)*320+x;
 		end=(y+j)*320+x+with;

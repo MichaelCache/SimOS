@@ -104,10 +104,10 @@ void enter_int_2c()
     		"pushal;"
     		"call int_handler2c;"
     		"popal;"
-			"popl %gs;"
-			"popl %fs;"
-			"popl %es;"
-			"popl %ds;"
+		"popl %gs;"
+		"popl %fs;"
+		"popl %es;"
+		"popl %ds;"
     		"movl %ebp,%esp;"
     		"popl %ebp;"
     		"iret;"
@@ -119,33 +119,36 @@ void int_handler21()
 	key=inb(KEY_DATA);				//get the key code from keyboard port
 	if(key==0x1e)					//that's if A is pressed
 	{
-		outb(0,0x03c8);
-		/* 0xffff00 is the RGB code for yellow,this function means when keyboard is pressed the
-		 * screen will turn yellow*/
-		outb(0xff,0x03c9);
-		outb(0xff,0x03c9);
-		outb(0x00,0x03c9);
+		/*outb(0,0x03c8);
+		 0xffff00 is the RGB code for yellow,this function means when keyboard is pressed the
+		 * screen will turn yellow
+		*outb(0xff,0x03c9);
+		*outb(0xff,0x03c9);
+		*outb(0x00,0x03c9);*/
+		draw_windows(0,0,50,50,0);	//draw a white box
 	}
 	else
 	{
-		outb(0,0x03c8);
-		/* 0xffff00 is the RGB code for yellow,this function means when keyboard is pressed the
-		 * screen will turn red*/
+		/*outb(0,0x03c8);
+		 0xffff00 is the RGB code for yellow,this function means when keyboard is pressed the
+		 * screen will turn red
 		outb(0xff,0x03c9);
 		outb(0x00,0x03c9);
-		outb(0x00,0x03c9);
+		outb(0x00,0x03c9);*/
+		draw_windows(0,0,50,50,1);	//draw a white box
 	}
 	outb(0x61,PIC0_OCW2);		//tell PIC interrupt is handled
 }
 
 void int_handler2c()
 {
-	outb(0,0x03c8);
-	/* 0xff0000 is the RGB code for red,this function means when mouse(PS/2) clicked
-	 * screen will turn black*/
-	outb(0x00,0x03c9);
-	outb(0x00,0x03c9);
-	outb(0x00,0x03c9);
+	/*outb(0,0x03c8);
+	 0xff0000 is the RGB code for red,this function means when mouse(PS/2) clicked
+	 * screen will turn black
+	*outb(0x00,0x03c9);
+	*outb(0x00,0x03c9);
+	*outb(0x00,0x03c9);*/
+	draw_windows(0,0,50,50,5);	//draw a yello box
 }
 
 static inline void sti()

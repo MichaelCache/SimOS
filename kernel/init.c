@@ -1,5 +1,6 @@
 #include "basicfunc.h"
 #include "palette.h"
+#include "font.h"
 
 void set_gatedec(struct GATE_DESCRIPTOR *gd,int offset,short selector,short atrribute);
 
@@ -7,7 +8,7 @@ void main()
 {
 	init_palette();
 	init_screen();
-	draw_windows(40,30,200,160);
+	draw_windows(40,30,200,160,214);
 
 	/*initial PIC i8059a chip*/
 	outb(0xff,PIC0_IMR);	//mask all master PIC interrupt
@@ -42,8 +43,9 @@ void main()
 	outb(0xef,PIC1_IMR);	//enable PIC int 0x2c
 	sti();					//enable CPU accept interrupt
 
+	print_font(50,50,font_A);
 	//enable mouse
-	//enable_mouse();
+	enable_mouse();
 	for(;;)
 	{
 		hlt();
