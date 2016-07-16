@@ -3,7 +3,6 @@
 
 static inline void outb(unsigned char color,unsigned short port);
 static inline unsigned char inb(unsigned short port);
-static inline void hlt();
 void int_handler21();		//driver for PS/2 keyboard
 void int_handler2c();		//driver for PS/2 mouse
 struct GATE_DESCRIPTOR		//IDT gate descriptor
@@ -15,14 +14,16 @@ struct GATE_DESCRIPTOR		//IDT gate descriptor
 
 struct FIFO
 {
-	unsigned char *fifo,*write,*read;
+	unsigned char *write,*read;
 	int size,flag;
 };
-static void fifo_init(struct FIFO *fifo);
+static void fifo_init(struct FIFO fifo,int size);
 static inline void ldidt();
-void enter_int_21();		//int 0x21
+void enter_int_21();		//some register handle before enter int 0x21
 void enter_int_2c();
 static inline void sti();	//enable interrupt
+static inline void cli();	//disable interrupt
+static inline void hlt();	//halt CPU
 static void enable_mouse();
 
 //PIC port
@@ -44,6 +45,8 @@ static void enable_mouse();
 #define KEY_CMD			0x0064
 #define KEY_DATA		0x0060
 
+struct FIFO fifo_mouse;
+
 static inline void outb(unsigned char color,unsigned short port)
 {
 	asm volatile ("outb %0,%1"::"a"(color),"d"(port));
@@ -56,9 +59,12 @@ static inline unsigned char inb(unsigned short port)
 	return data;
 }
 
-static void fifo_init(struct FIFO *fifo)
+static void fifo_init(struct FIFO fifo,int size)
 {
-
+	fifo.size=size+&fifo;	//set size of the fifo
+	fifo.write=&fifo;	//write point at begin of the fifo
+	fifo.read=&fifo;	//read point at begin of the fifo
+	fifo.flag=0;		//fifo is empty,it's flag is 0
 }
 
 static inline void hlt()
@@ -85,14 +91,14 @@ void enter_int_21()
     		"pushal;"
     		"call int_handler21;"	//call the real int 21 handler function
     		"popal;"
-			"popl %gs;"
-			"popl %fs;"
-			"popl %es;"
-			"popl %ds;"
+		"popl %gs;"
+		"popl %fs;"
+		"popl %es;"
+		"popl %ds;"
     		"movl %ebp,%esp;"
     		"popl %ebp;"		//for call this function,pushl %ebp and movw %esp,%ebp had be done
- 			"iret;"				//iret only pop out the %cs,%ip and EFLAG,
-			);					//without instruction upper,the stack will chaos
+ 		"iret;"			//iret only pop out the %cs,%ip and EFLAG,
+		);			//without instruction upper,the stack will chaos
 }
 
 void enter_int_2c()
@@ -119,22 +125,10 @@ void int_handler21()
 	key=inb(KEY_DATA);				//get the key code from keyboard port
 	if(key==0x1e)					//that's if A is pressed
 	{
-		/*outb(0,0x03c8);
-		 0xffff00 is the RGB code for yellow,this function means when keyboard is pressed the
-		 * screen will turn yellow
-		*outb(0xff,0x03c9);
-		*outb(0xff,0x03c9);
-		*outb(0x00,0x03c9);*/
 		draw_windows(0,0,50,50,0);	//draw a white box
 	}
 	else
 	{
-		/*outb(0,0x03c8);
-		 0xffff00 is the RGB code for yellow,this function means when keyboard is pressed the
-		 * screen will turn red
-		outb(0xff,0x03c9);
-		outb(0x00,0x03c9);
-		outb(0x00,0x03c9);*/
 		draw_windows(0,0,50,50,1);	//draw a white box
 	}
 	outb(0x61,PIC0_OCW2);		//tell PIC interrupt is handled
@@ -142,13 +136,17 @@ void int_handler21()
 
 void int_handler2c()
 {
-	/*outb(0,0x03c8);
-	 0xff0000 is the RGB code for red,this function means when mouse(PS/2) clicked
-	 * screen will turn black
-	*outb(0x00,0x03c9);
-	*outb(0x00,0x03c9);
-	*outb(0x00,0x03c9);*/
-	draw_windows(0,0,50,50,5);	//draw a yello box
+	unsigned char data;
+	data=inb(KEY_DATA);
+	*fifo_mouse.write=data;		//draw a yello box
+	fifo_mouse.flag=1;
+	fifo_mouse.write++;
+	if(fifo_mouse.write > fifo_mouse.size)
+	{
+		fifo_mouse.write=&fifo_mouse;
+	}
+	outb(0x64,PIC1_OCW2);		//tell PIC1_OCW2 port,int-12(0x4) is handled.Code is 0x60+IRQ.
+	outb(0x62,PIC0_OCW2);		//tell PIC0_OCW2 port,int-2(0x2) is handled.Code is 0x60+IRQ.
 }
 
 static inline void sti()
@@ -156,15 +154,20 @@ static inline void sti()
 	asm volatile("sti;");
 }
 
+static inline void cli()
+{
+	asm volatile("cli;");
+}
+
 static void enable_mouse()
 {
+        while(inb(KEY_STAT)&0x2!=0);  //wait to keyboard ready
+        outb(0x60,KEY_CMD);           //tell i8042,the next CMD will be wrote to it's command buffer
+        while(inb(KEY_STAT)&0x2!=0);	//enable keyboard
+        outb(0x47,KEY_DATA); 
 	while(inb(KEY_STAT)&0x2!=0);	//wait to keyboard ready
-	outb(0xd4,KEY_CMD);				//tell i8042 the next CMD will be wrote to mouse
+	outb(0xd4,KEY_CMD);		//tell i8042 the next CMD will be wrote to mouse
 	while(inb(KEY_STAT)&0x2!=0);
-	outb(0xf4,KEY_DATA);			//enable mouse
-	while(inb(KEY_STAT)&0x2!=0);	//wait to keyboard ready
-	outb(0x60,KEY_CMD);				//tell i8042,the next CMD will be wrote to it's command buffer
-	while(inb(KEY_STAT)&0x2!=0);
-	outb(0x47,KEY_DATA);			//enable mouse and keyboard interrupt
+	outb(0xf4,KEY_DATA);		//enable mouse
 }
 #endif

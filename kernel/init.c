@@ -3,6 +3,7 @@
 #include "font.h"
 
 void set_gatedec(struct GATE_DESCRIPTOR *gd,int offset,short selector,short atrribute);
+extern struct FIFO fifo_mouse;                  //init fifo for mouse
 
 void main()
 {
@@ -12,7 +13,7 @@ void main()
 
 	print_font(50,50,font_E);
 	print_font(58,50,font_F);
-	print_mouse(0,0);
+	print_mouse(140,70);
 	/*initial PIC i8059a chip*/
 	outb(0xff,PIC0_IMR);	//mask all master PIC interrupt
 	outb(0xff,PIC1_IMR);	//mask all slave PIC interrupt
@@ -46,11 +47,33 @@ void main()
 	outb(0xef,PIC1_IMR);	//enable PIC int 0x2c
 	sti();					//enable CPU accept interrupt
 
+        //extern struct FIFO fifo_mouse;			//init fifo for mouse
+        fifo_init(fifo_mouse,255);		//size 256B
+
 	//enable mouse
 	enable_mouse();
 	for(;;)
 	{
-		hlt();
+		cli();
+		if(fifo_mouse.flag==0)
+		{
+			sti();
+			hlt();
+		}
+		else
+		{
+			print_font(120,80,font_A);
+			fifo_mouse.read++;
+			if(fifo_mouse.read == fifo_mouse.write)
+			{
+				fifo_mouse.flag=0;
+			}
+			else if(fifo_mouse.read > fifo_mouse.size)
+        		{
+               			fifo_mouse.write=&fifo_mouse;
+        		}
+			sti();
+		}
 	}
 }
 
