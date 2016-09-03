@@ -14,10 +14,16 @@ struct GATE_DESCRIPTOR		//IDT gate descriptor
 
 struct FIFO
 {
-	unsigned char *write,*read;
-	int size,flag;
+	unsigned char buff[256];
+	int flag,write,read;
 };
-static void fifo_init(struct FIFO fifo,int size);
+
+static void fifo_init(struct FIFO fifo);
+static void fifo_mouse_write(unsigned char data);
+unsigned char fifo_mouse_read();
+
+struct FIFO fifo_mouse;
+
 static inline void ldidt();
 void enter_int_21();		//some register handle before enter int 0x21
 void enter_int_2c();
@@ -45,7 +51,7 @@ static void enable_mouse();
 #define KEY_CMD			0x0064
 #define KEY_DATA		0x0060
 
-struct FIFO fifo_mouse;
+
 
 static inline void outb(unsigned char color,unsigned short port)
 {
@@ -59,13 +65,36 @@ static inline unsigned char inb(unsigned short port)
 	return data;
 }
 
-static void fifo_init(struct FIFO fifo,int size)
+static void fifo_init(struct FIFO fifo)
 {
-	fifo.size=size+&fifo;	//set size of the fifo
-	fifo.write=&fifo;	//write point at begin of the fifo
-	fifo.read=&fifo;	//read point at begin of the fifo
-	fifo.flag=0;		//fifo is empty,it's flag is 0
+	fifo.write=0;	//write point at begin of the buffer
+	fifo.read=0;	//read point at begin of the buffer
+	fifo.flag=0;			//fifo is empty,its flag is 0
 }
+
+
+static void fifo_mouse_write(unsigned char data)
+{
+	if(fifo_mouse.write>255)
+	{
+		fifo_mouse.write=0;	//write point at begin of the buffer
+	}
+	fifo_mouse.buff[fifo_mouse.write]=data;
+	fifo_mouse.write++;
+}
+
+unsigned char fifo_mouse_read()
+{
+	if(fifo_mouse.read>255)
+	{
+		fifo_mouse.read=0;	//write point at begin of the buffer
+	}
+	unsigned char data;
+	data=fifo_mouse.buff[fifo_mouse.read];
+	fifo_mouse.read++;
+	return data;
+}
+
 
 static inline void hlt()
 {
@@ -136,17 +165,12 @@ void int_handler21()
 
 void int_handler2c()
 {
-	unsigned char data;
-	data=inb(KEY_DATA);
-	*fifo_mouse.write=data;		//draw a yello box
-	fifo_mouse.flag=1;
-	fifo_mouse.write++;
-	if(fifo_mouse.write > fifo_mouse.size)
-	{
-		fifo_mouse.write=&fifo_mouse;
-	}
 	outb(0x64,PIC1_OCW2);		//tell PIC1_OCW2 port,int-12(0x4) is handled.Code is 0x60+IRQ.
 	outb(0x62,PIC0_OCW2);		//tell PIC0_OCW2 port,int-2(0x2) is handled.Code is 0x60+IRQ.
+	unsigned char data;
+	data=inb(KEY_DATA);
+	fifo_mouse_write(data);		//draw a yello box
+	fifo_mouse.flag=1;
 }
 
 static inline void sti()
@@ -164,7 +188,7 @@ static void enable_mouse()
         while(inb(KEY_STAT)&0x2!=0);  //wait to keyboard ready
         outb(0x60,KEY_CMD);           //tell i8042,the next CMD will be wrote to it's command buffer
         while(inb(KEY_STAT)&0x2!=0);	//enable keyboard
-        outb(0x47,KEY_DATA); 
+        outb(0x47,KEY_DATA);
 	while(inb(KEY_STAT)&0x2!=0);	//wait to keyboard ready
 	outb(0xd4,KEY_CMD);		//tell i8042 the next CMD will be wrote to mouse
 	while(inb(KEY_STAT)&0x2!=0);

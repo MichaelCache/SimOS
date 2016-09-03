@@ -7,12 +7,15 @@ extern struct FIFO fifo_mouse;                  //init fifo for mouse
 
 void main()
 {
+	unsigned char mouse_phase,mouse_code[3];
+	int mouse_info[3];
+
 	init_palette();
 	init_screen();
 	draw_windows(40,30,200,160,214);
 
-	print_font(50,50,font_E);
-	print_font(58,50,font_F);
+	//print_font(50,50,font_E);
+	//print_font(58,50,font_F);
 	print_mouse(140,70);
 	/*initial PIC i8059a chip*/
 	outb(0xff,PIC0_IMR);	//mask all master PIC interrupt
@@ -21,12 +24,12 @@ void main()
 	outb(0x11,PIC0_ICW1);	//edge trigger mode
 	outb(0x20,PIC0_ICW2);	//set IRQ0-7 map to INT 0x20-0x27
 	outb(1<<2,PIC0_ICW3);	//slave connected to the IRQ2 port of master,00000100
-	outb(0x3,PIC0_ICW4);		//no buffer mode
+	outb(0x01,PIC0_ICW4);		//no buffer mode
 
 	outb(0x11,PIC1_ICW1);
 	outb(0x28,PIC1_ICW2);	//set IRQ8-15 map to INT 0x28-0x2f
 	outb(2,PIC1_ICW3);
-	outb(0x3,PIC1_ICW4);
+	outb(0x01,PIC1_ICW4);
 
 	/*initial IDT*/
 
@@ -48,9 +51,10 @@ void main()
 	sti();					//enable CPU accept interrupt
 
         //extern struct FIFO fifo_mouse;			//init fifo for mouse
-        fifo_init(fifo_mouse,255);		//size 256B
+        fifo_init(fifo_mouse);		//size 256B
 
 	//enable mouse
+	mouse_phase=0;
 	enable_mouse();
 	for(;;)
 	{
@@ -58,21 +62,49 @@ void main()
 		if(fifo_mouse.flag==0)
 		{
 			sti();
-			hlt();
+			//hlt();
 		}
 		else
 		{
-			print_font(120,80,font_A);
-			fifo_mouse.read++;
+			sti();
+			unsigned char data;
+			data=fifo_mouse_read();
+			if(mouse_phase==1)
+			{
+				mouse_code[0]=data;
+				mouse_phase=2;
+			}
+			else if(mouse_phase==2)
+			{
+				mouse_code[1]=data;
+				mouse_phase=3;
+			}
+			else if(mouse_phase==3)
+			{
+				mouse_code[2]=data;
+				mouse_phase=1;
+				mouse_info[0]=mouse_code[0] & 0x07;
+				mouse_info[1]=mouse_code[1];
+				mouse_info[2]=mouse_code[2]*(-1);
+				if((mouse_info[0] & 0x10) != 0)
+				{
+					mouse_info[1] |=0xffffff00;
+				}
+				if((mouse_info[0] & 0x20) != 0)
+				{
+					mouse_info[2] |=0xffffff00;
+				}
+				print_mouse(140+mouse_info[1],70+mouse_info[2]);
+			}
+			if(data==0xfa)
+			{
+				mouse_phase=1;
+			}
 			if(fifo_mouse.read == fifo_mouse.write)
 			{
 				fifo_mouse.flag=0;
+				//hlt();
 			}
-			else if(fifo_mouse.read > fifo_mouse.size)
-        		{
-               			fifo_mouse.write=&fifo_mouse;
-        		}
-			sti();
 		}
 	}
 }
