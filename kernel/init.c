@@ -2,13 +2,20 @@
 #include "palette.h"
 #include "font.h"
 
+void int_handler21();            //driver for PS/2 keyboard
+void int_handler2c(); 
+
 void set_gatedec(struct GATE_DESCRIPTOR *gd,int offset,short selector,short atrribute);
-extern struct FIFO fifo_mouse;                  //init fifo for mouse
+
+void mouse_decode();
+unsigned char mouse_phase,mouse_code[3];
+int mouse_info[3];
+int mouse_x,mouse_y;
+
+extern struct FIFO *fifo_mouse;
 
 void main()
 {
-	unsigned char mouse_phase,mouse_code[3];
-	int mouse_info[3];
 
 	init_palette();
 	init_screen();
@@ -50,61 +57,24 @@ void main()
 	outb(0xef,PIC1_IMR);	//enable PIC int 0x2c
 	sti();					//enable CPU accept interrupt
 
-        //extern struct FIFO fifo_mouse;			//init fifo for mouse
-        fifo_init(fifo_mouse);		//size 256B
+        fifo_mouse_init(fifo_mouse);		//size 256B
 
 	//enable mouse
 	mouse_phase=0;
 	enable_mouse();
+	mouse_x=140;
+	mouse_y=70;
 	for(;;)
 	{
 		cli();
-		if(fifo_mouse.flag==0)
+		if(fifo_mouse->flag==0)
 		{
 			sti();
-			//hlt();
 		}
 		else
 		{
 			sti();
-			unsigned char data;
-			data=fifo_mouse_read();
-			if(mouse_phase==1)
-			{
-				mouse_code[0]=data;
-				mouse_phase=2;
-			}
-			else if(mouse_phase==2)
-			{
-				mouse_code[1]=data;
-				mouse_phase=3;
-			}
-			else if(mouse_phase==3)
-			{
-				mouse_code[2]=data;
-				mouse_phase=1;
-				mouse_info[0]=mouse_code[0] & 0x07;
-				mouse_info[1]=mouse_code[1];
-				mouse_info[2]=mouse_code[2]*(-1);
-				if((mouse_info[0] & 0x10) != 0)
-				{
-					mouse_info[1] |=0xffffff00;
-				}
-				if((mouse_info[0] & 0x20) != 0)
-				{
-					mouse_info[2] |=0xffffff00;
-				}
-				print_mouse(140+mouse_info[1],70+mouse_info[2]);
-			}
-			if(data==0xfa)
-			{
-				mouse_phase=1;
-			}
-			if(fifo_mouse.read == fifo_mouse.write)
-			{
-				fifo_mouse.flag=0;
-				//hlt();
-			}
+			mouse_decode();
 		}
 	}
 }
@@ -118,3 +88,48 @@ void set_gatedec(struct GATE_DESCRIPTOR *gd,int offset,short selector,short atrr
 	gd->offset_high	= (offset >> 16) & 0xffff;
 }
 
+void mouse_decode()
+{
+	unsigned char data;
+        data=fifo_mouse_read(fifo_mouse);
+        if(mouse_phase==1)
+        {
+                mouse_code[0]=data;
+                mouse_phase=2;
+		return;
+        }
+        if(mouse_phase==2)
+        {
+                mouse_code[1]=data;
+                mouse_phase=3;
+		return;
+        }
+        if(mouse_phase==3)
+        {
+                mouse_code[2]=data;
+                mouse_phase=1;
+                mouse_info[0]=mouse_code[0];//& 0x07;
+                mouse_info[1]=mouse_code[1];
+                mouse_info[2]=mouse_code[2];
+        	if((mouse_info[0] & 0x10) != 0)
+        	{
+                	mouse_info[1] |=0xffffff00;
+        	}
+        	if((mouse_info[0] & 0x20) != 0)
+        	{
+                	mouse_info[2] |=0xffffff00;
+        	}
+        	mouse_x+=mouse_info[1];
+		mouse_y+=mouse_info[2]*(-1);
+		print_mouse(mouse_x,mouse_y);
+		return;
+        }
+        if(mouse_phase==0)
+        {
+                if(data==0xfa)
+        	{
+                        mouse_phase=1;
+                }
+		return;
+        }
+}

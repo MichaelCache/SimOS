@@ -18,11 +18,12 @@ struct FIFO
 	int flag,write,read;
 };
 
-static void fifo_init(struct FIFO fifo);
-static void fifo_mouse_write(unsigned char data);
-unsigned char fifo_mouse_read();
+static void fifo_mouse_init(struct FIFO *f);
+static void fifo_mouse_write(struct FIFO *f,unsigned char data);
+static unsigned char fifo_mouse_read(struct FIFO *f);
 
-struct FIFO fifo_mouse;
+
+//extern struct FIFO fifo_mouse;
 
 static inline void ldidt();
 void enter_int_21();		//some register handle before enter int 0x21
@@ -65,36 +66,39 @@ static inline unsigned char inb(unsigned short port)
 	return data;
 }
 
-static void fifo_init(struct FIFO fifo)
+static void fifo_mouse_init(struct FIFO *f)
 {
-	fifo.write=0;	//write point at begin of the buffer
-	fifo.read=0;	//read point at begin of the buffer
-	fifo.flag=0;			//fifo is empty,its flag is 0
+        f->write=0;     //write point at begin of the buffer
+        f->read=0;      //read point at begin of the buffer
+        f->flag=0;                      //fifo is empty,its flag is 0
 }
 
 
-static void fifo_mouse_write(unsigned char data)
+static void fifo_mouse_write(struct FIFO *f,unsigned char data)
 {
-	if(fifo_mouse.write>255)
+        if(f->write>255)
+        {
+                f->write=0;     //write point at begin of the buffer
+        }
+        f->buff[f->write]=data;
+        f->write++;
+}
+
+unsigned char fifo_mouse_read(struct FIFO *f)
+{
+        if(f->read>255)
+        {
+                f->read=0;      //write point at begin of the buffer
+        }
+        unsigned char data;
+        data=f->buff[f->read];
+        f->read++;
+	if(f->read==f->write)
 	{
-		fifo_mouse.write=0;	//write point at begin of the buffer
+		f->flag=0;
 	}
-	fifo_mouse.buff[fifo_mouse.write]=data;
-	fifo_mouse.write++;
+        return data;
 }
-
-unsigned char fifo_mouse_read()
-{
-	if(fifo_mouse.read>255)
-	{
-		fifo_mouse.read=0;	//write point at begin of the buffer
-	}
-	unsigned char data;
-	data=fifo_mouse.buff[fifo_mouse.read];
-	fifo_mouse.read++;
-	return data;
-}
-
 
 static inline void hlt()
 {
@@ -111,7 +115,7 @@ static inline void ldidt()
 	asm volatile("lidt 0x8200");
 }
 
-void enter_int_21()
+void enter_int_21()			//enter keyboard interrupt 
 {
     asm volatile ("pushl %ds;"
     		"pushl %es;"
@@ -130,7 +134,7 @@ void enter_int_21()
 		);			//without instruction upper,the stack will chaos
 }
 
-void enter_int_2c()
+void enter_int_2c()			//enter mouse interrupt
 {
     asm volatile ("pushl %ds;"
     		"pushl %es;"
@@ -148,30 +152,35 @@ void enter_int_2c()
     		"iret;"
 			);
 }
+
 void int_handler21()
 {
-	unsigned char key;
-	key=inb(KEY_DATA);				//get the key code from keyboard port
-	if(key==0x1e)					//that's if A is pressed
-	{
-		draw_windows(0,0,50,50,0);	//draw a white box
-	}
-	else
-	{
-		draw_windows(0,0,50,50,1);	//draw a white box
-	}
-	outb(0x61,PIC0_OCW2);		//tell PIC interrupt is handled
+        unsigned char key;
+        key=inb(KEY_DATA);                              //get the key code from keyboard port
+        if(key==0x1e)                                   //that's if A is pressed
+        {
+                draw_windows(0,0,50,50,0);      //draw a white box
+        }
+        else
+        {
+                draw_windows(0,0,50,50,1);      //draw a white box
+        }
+        outb(0x61,PIC0_OCW2);           //tell PIC interrupt is handled
 }
+
+
+struct FIFO *fifo_mouse=(struct FIFO *)0x102520;
 
 void int_handler2c()
 {
-	outb(0x64,PIC1_OCW2);		//tell PIC1_OCW2 port,int-12(0x4) is handled.Code is 0x60+IRQ.
-	outb(0x62,PIC0_OCW2);		//tell PIC0_OCW2 port,int-2(0x2) is handled.Code is 0x60+IRQ.
-	unsigned char data;
-	data=inb(KEY_DATA);
-	fifo_mouse_write(data);		//draw a yello box
-	fifo_mouse.flag=1;
+        outb(0x64,PIC1_OCW2);           //tell PIC1_OCW2 port,int-12(0x4) is handled.Code is 0x60+IRQ.
+        outb(0x62,PIC0_OCW2);           //tell PIC0_OCW2 port,int-2(0x2) is handled.Code is 0x60+IRQ.
+        unsigned char data;
+        data=inb(KEY_DATA);
+        fifo_mouse_write(fifo_mouse,data);         //write mouse data to mouse fifo
+        fifo_mouse->flag=1;
 }
+
 
 static inline void sti()
 {
@@ -194,4 +203,6 @@ static void enable_mouse()
 	while(inb(KEY_STAT)&0x2!=0);
 	outb(0xf4,KEY_DATA);		//enable mouse
 }
+
+
 #endif

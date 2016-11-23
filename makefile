@@ -5,7 +5,9 @@ bootblock:bootloader/bootloader.s
 system:kernel/init.c kernel/palette.h kernel/basicfunc.h kernel/font.h 
 	gcc -c -ggdb -m32 -o system.o kernel/init.c
 	#set the system start address at 0x100000
-	ld -m elf_i386 -Ttext=0x100000 system.o
+	#use objdump -D to inspect out file
+	#use nm to list symbols from object file
+	ld -e main -m elf_i386 -Ttext=0x100000 system.o
 	objcopy a.out -O binary system
 all:system bootblock
 	#skip 62*512 bit off from bootblock, whose code start from 0x7c00
@@ -14,8 +16,11 @@ all:system bootblock
 	dd if=system of=SimOS.img conv=notrunc seek=1
 convert_vdi:SimOS.img
 	qemu-img convert SimOS.img -O vdi DSB.vdi
-qemu_debug:
-	qemu-system-i386 -hda SimOS.img -d in_asm
+gdb_qemu:
+	#use gdb to debug image
+	#gdb>target remote [localhost]:1234
+	#gdb>file a.out
+	qemu-system-i386 -s -S -hda SimOS.img -d in_asm
 run:all
 	qemu-system-i386 -hda SimOS.img
 clean:
